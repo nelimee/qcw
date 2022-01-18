@@ -28,7 +28,6 @@ import importlib
 import inspect
 import types
 import typing as ty
-from collections.abc import MutableMapping
 
 from qcw.exceptions import UnsupportedPluginAPI, NotAPackage
 
@@ -104,7 +103,7 @@ class LazyQCWPluginModuleWrapper:
         return self._routine_wrapper
 
 
-class LazyModuleLoader(MutableMapping[str, LazyQCWPluginModuleWrapper]):
+class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
     """A lazy loader for qcw plugins organised as modules.
 
     This class implements all the necessary interface to automatically
