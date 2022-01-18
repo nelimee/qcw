@@ -203,6 +203,9 @@ class RoutineWrapper(abc.ABC):
         """Return the name of the wrapped subroutine."""
         pass
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}('{self.name}')"
+
     def __hash__(self) -> int:
         """Compute the hash of the wrapped routine.
 
