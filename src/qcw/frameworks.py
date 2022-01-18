@@ -129,11 +129,7 @@ class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
         self._mapping: ty.Dict[str, LazyQCWPluginModuleWrapper] = dict()
 
         if not hasattr(self._namespace_package, "__path__"):
-            raise NotAPackage(
-                f"The module {self._namespace_package} has no '__path__' "
-                "attribute. It means that it is not a package and so "
-                "plugin discovery will fail."
-            )
+            raise NotAPackage(self._namespace_package)
 
         for pkg_info in pkgutil.iter_modules(self._namespace_package.__path__):
             self.__setitem__(
