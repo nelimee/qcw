@@ -1,0 +1,35 @@
+[project]
+name            = "qcw"
+version         = "0.1.0"
+description     = "Universal and consistant interface to access information from quantum circuits implemented using different framework"
+readme          = "README.md"
+authors         = [{ name = "Adrien Suau", email = "12374487+nelimee@users.noreply.github.com" }]
+requires-python = ">=3.7,<3.12"
+dependencies    = []
+
+[project.optional-dependencies]
+qiskit    = ["qcw-qiskit"]
+xacc      = ["qcw-xacc"]
+openqasm2 = ["qcw-openqasm2"]
+myqlm     = ["qcw-myqlm"]
+all       = ["qcw-qiskit", "qcw-openqasm2", "qcw-xacc", "qcw-myqlm"]
+
+[build-system]
+requires      = ["uv_build>=0.11.26,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.sources]
+qcw           = { workspace = true }
+qcw-myqlm     = { workspace = true }
+qcw-openqasm2 = { workspace = true }
+qcw-qiskit    = { workspace = true }
+qcw-xacc      = { workspace = true }
+
+[tool.uv.workspace]
+members = ["plugins/*"]
+
+[dependency-groups]
+dev = ["ipython", "ruff==0.15.20", "qcw[all]"]
+
+[tool.uv.build-backend]
+module-name = "qcw.plugins.frameworks"
