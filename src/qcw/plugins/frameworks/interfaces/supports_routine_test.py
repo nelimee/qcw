@@ -25,10 +25,10 @@ plugins in order to check if a given routine is supported by the plugin.
 #
 # =============================================================================
 
-import typing as ty
+from typing import Any
 
 
-def supports_routine(routine) -> ty.Tuple[bool, ty.Optional[str]]:
+def supports_routine(routine: Any) -> tuple[bool, str | None]:
     """Check plugin compatibility with the given routine.
 
     :param routine: framework-specific routine instance.

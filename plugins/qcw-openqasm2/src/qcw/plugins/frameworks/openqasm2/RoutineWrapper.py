@@ -21,14 +21,10 @@
 #
 # =============================================================================
 
-import re
-import typing as ty
-from typing import Iterable, Union
-
-from qiskit import QuantumCircuit
 from qcw.plugins.frameworks.qiskit.RoutineWrapper import (
     RoutineWrapper as QiskitRoutineWrapper,
 )
+from qiskit import QuantumCircuit
 
 
 class RoutineWrapper(QiskitRoutineWrapper):

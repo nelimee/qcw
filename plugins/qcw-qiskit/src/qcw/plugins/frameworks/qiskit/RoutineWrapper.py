@@ -20,27 +20,26 @@
 # program. If not, see https://www.gnu.org/licenses/lgpl-3.0.txt
 #
 # =============================================================================
+from __future__ import annotations
 
-import re
-import typing as ty
-from typing import Iterable, Union
 import logging
+import re
+from collections.abc import Mapping
+from typing import Any, Callable, Final, Iterator, Union
 
 import numpy
 
+from qcw.exceptions import UnsupportedEqualityTesting
+from qcw.plugins.frameworks import interfaces
 from qiskit.circuit import Instruction, QuantumCircuit
 from qiskit.circuit.classicalregister import Clbit as QiskitClbit
-from qiskit.circuit.quantumregister import Qubit as QiskitQubit
 from qiskit.circuit.parameterexpression import ParameterExpression
-
-from qcw.plugins.frameworks import interfaces
-from qcw.exceptions import UnsupportedEqualityTesting
+from qiskit.circuit.quantumregister import Qubit as QiskitQubit
 
 logger = logging.getLogger(__file__)
-T = ty.TypeVar("T")
 
 
-def _get_parameters(instr: ty.Union[Instruction, QuantumCircuit]):
+def _get_parameters(instr: Instruction | QuantumCircuit):
     if isinstance(instr, Instruction):
         return instr.params
     elif isinstance(instr, QuantumCircuit):
@@ -59,16 +58,16 @@ class RoutineWrapper(interfaces.RoutineWrapper):
     """
 
     _circuit_name_update_regex = re.compile(r"^(.*)-\d+?$")
-    _ROUNDING: int = 10
+    _ROUNDING: Final[int] = 10
 
-    _HASH_FUNCTIONS: ty.Mapping[ty.Type[T], ty.Callable[[T], int]] = {
+    _HASH_FUNCTIONS: Mapping[type[Any], Callable[[Any], int]] = {
         int: lambda i: hash(i),
         float: lambda f: hash(round(f, RoutineWrapper._ROUNDING)),
         numpy.float64: lambda f: hash(round(f, RoutineWrapper._ROUNDING)),
         numpy.ndarray: lambda arr: hash(arr.data),
         ParameterExpression: lambda p: hash(p),
     }
-    _EQUALITY_FUNCTIONS: ty.Mapping[ty.Type[T], ty.Callable[[T, T], bool]] = {
+    _EQUALITY_FUNCTIONS: Mapping[type[Any], Callable[[Any, Any], bool]] = {
         int: lambda i1, i2: i1 == i2,
         float: lambda f1, f2: (
             round(f1, RoutineWrapper._ROUNDING) == round(f2, RoutineWrapper._ROUNDING)
@@ -85,9 +84,9 @@ class RoutineWrapper(interfaces.RoutineWrapper):
     def __init__(
         self,
         routine: Union[QuantumCircuit, Instruction],
-        called_on_qubits: ty.Optional[ty.List[interfaces.Qubit]] = None,
-        called_on_clbits: ty.Optional[ty.List[interfaces.Clbit]] = None,
-        called_by: ty.Optional["RoutineWrapper"] = None,
+        called_on_qubits: list[interfaces.Qubit] | None = None,
+        called_on_clbits: list[interfaces.Clbit] | None = None,
+        called_by: RoutineWrapper | None = None,
     ):
         """Initialise the RoutineWrapper instance.
 
@@ -104,7 +103,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
         """
         # Invariant:
         # self.routine is always of type QuantumCircuit
-        self._main_instruction: ty.Union[Instruction, QuantumCircuit] = routine
+        self._main_instruction: Instruction | QuantumCircuit = routine
         if isinstance(self._main_instruction, Instruction):
             super().__init__(self._main_instruction.definition, called_by)
         elif isinstance(self._main_instruction, QuantumCircuit):
@@ -119,7 +118,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
             called_on_qubits = [
                 interfaces.Qubit(main_qreg, i) for i in range(len(qubits))
             ]
-        self._reversed_qubits_mapping: ty.Dict[interfaces.Qubit, interfaces.Qubit] = {
+        self._reversed_qubits_mapping: dict[interfaces.Qubit, interfaces.Qubit] = {
             q1: q2 for q1, q2 in zip(qubits, called_on_qubits)
         }
         # Handle clbits
@@ -131,16 +130,16 @@ class RoutineWrapper(interfaces.RoutineWrapper):
             called_on_clbits = [
                 interfaces.Clbit(main_creg, i) for i in range(len(clbits))
             ]
-        self._reversed_clbits_mapping: ty.Dict[interfaces.Clbit, interfaces.Clbit] = {
+        self._reversed_clbits_mapping: dict[interfaces.Clbit, interfaces.Clbit] = {
             c1: c2 for c1, c2 in zip(clbits, called_on_clbits)
         }
 
-    def __iter__(self) -> Iterable["RoutineWrapper"]:
+    def __iter__(self) -> Iterator["RoutineWrapper"]:
         """Iterate over the subroutines of self."""
-        qmap: ty.Dict[QiskitQubit, interfaces.Qubit] = {
+        qmap: dict[QiskitQubit, interfaces.Qubit] = {
             q1: q2 for q1, q2 in zip(self.routine.qubits, self.qubits)
         }
-        cmap: ty.Dict[QiskitClbit, interfaces.Clbit] = {
+        cmap: dict[QiskitClbit, interfaces.Clbit] = {
             q1: q2 for q1, q2 in zip(self.routine.clbits, self.clbits)
         }
         for instr, qubits, clbits in self.routine.data:
@@ -171,7 +170,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
             ",".join(map(str, _get_parameters(self._main_instruction)))
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         """Get the hash of the wrapped instruction.
 
         The hash depends on the name of the intruction and the hash of its
@@ -180,7 +179,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
 
         :return: hash of the wrapped instruction
         """
-        instr: ty.Union[Instruction, QuantumCircuit] = self._main_instruction
+        instr: Instruction | QuantumCircuit = self._main_instruction
         parameters = _get_parameters(instr)
 
         return hash(
@@ -190,7 +189,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
             )
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: object):
         """Equality testing.
 
         :param other: right-hand side of the equality operator
@@ -199,8 +198,8 @@ class RoutineWrapper(interfaces.RoutineWrapper):
         if not isinstance(other, RoutineWrapper):
             raise UnsupportedEqualityTesting(type(self), type(other))
 
-        sinstr: ty.Union[Instruction, QuantumCircuit] = self._main_instruction
-        oinstr: ty.Union[Instruction, QuantumCircuit] = other._main_instruction
+        sinstr: Instruction | QuantumCircuit = self._main_instruction
+        oinstr: Instruction | QuantumCircuit = other._main_instruction
         sinstr_params = _get_parameters(sinstr)
         oinstr_params = _get_parameters(oinstr)
 
@@ -217,7 +216,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
         )
 
     @property
-    def qubits(self) -> ty.List[interfaces.Qubit]:
+    def qubits(self) -> list[interfaces.Qubit]:
         """Return the qubits self is applied on."""
         if self.is_base:
             qreg = interfaces.QuantumRegister(
@@ -235,7 +234,7 @@ class RoutineWrapper(interfaces.RoutineWrapper):
         ]
 
     @property
-    def clbits(self) -> ty.List[interfaces.Clbit]:
+    def clbits(self) -> list[interfaces.Clbit]:
         """Return the qubits self is applied on."""
         if self.is_base:
             creg = interfaces.QuantumRegister(
@@ -261,5 +260,8 @@ class RoutineWrapper(interfaces.RoutineWrapper):
         """
         if isinstance(bit, interfaces.Clbit):
             return self._reversed_clbits_mapping[bit]
-        else:
+        elif isinstance(bit, interfaces.Qubit):
             return self._reversed_qubits_mapping[bit]
+        else:
+            msg = f"Unsupported bit type: {type(bit).__name__}."
+            raise RuntimeError(msg)

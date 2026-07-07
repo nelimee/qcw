@@ -23,13 +23,15 @@
 
 # See
 # https://packaging.python.org/guides/creating-and-discovering-plugins/#using-namespace-packages
-import pkgutil
 import importlib
 import inspect
+import pkgutil
 import types
-import typing as ty
+from collections.abc import ItemsView, Iterator, MutableMapping
+from typing import Any, Callable
 
-from qcw.exceptions import UnsupportedPluginAPI, NotAPackage
+import qcw.plugins.frameworks as qcw_frameworks_namespace_package
+from qcw.exceptions import NotAPackage, UnsupportedPluginAPI
 
 
 class LazyQCWPluginModuleWrapper:
@@ -45,11 +47,11 @@ class LazyQCWPluginModuleWrapper:
     def __init__(self, module_name: str):
         """Create an instance representing the given module name."""
         self._module_name: str = module_name
-        self._supports_routine: ty.Optional[ty.Callable[[ty.Any], bool]] = None
-        self._routine_wrapper: ty.Optional[ty.Type] = None
+        self._supports_routine: Callable[[Any], tuple[bool, str | None]] | None = None
+        self._routine_wrapper: type | None = None
 
     @staticmethod
-    def _import_component(module_name: str, component_name: str) -> ty.Any:
+    def _import_component(module_name: str, component_name: str) -> Any:
         """Import the module module_name and returns component_name from this module.
 
         :param module_name: an importable python module.
@@ -69,7 +71,7 @@ class LazyQCWPluginModuleWrapper:
         return getattr(module, component_name)
 
     @property
-    def supports_routine(self) -> ty.Callable[[ty.Any], bool]:
+    def supports_routine(self) -> Callable[[Any], tuple[bool, str | None]]:
         """Return the supports_routine function from the plugin.
 
         This property imports the supports_routine function from the
@@ -86,7 +88,7 @@ class LazyQCWPluginModuleWrapper:
         return self._supports_routine
 
     @property
-    def RoutineWrapper(self) -> ty.Type:
+    def RoutineWrapper(self) -> type:
         """Return the RoutineWrapper class from the plugin.
 
         This property imports the RoutineWrapper class from the represented
@@ -103,7 +105,7 @@ class LazyQCWPluginModuleWrapper:
         return self._routine_wrapper
 
 
-class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
+class LazyModuleLoader(MutableMapping[str, LazyQCWPluginModuleWrapper]):
     """A lazy loader for qcw plugins organised as modules.
 
     This class implements all the necessary interface to automatically
@@ -126,7 +128,7 @@ class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
         """
         self._namespace_package: types.ModuleType = namespace_package
         self._prefix: str = namespace_package.__name__ + "."
-        self._mapping: ty.Dict[str, LazyQCWPluginModuleWrapper] = dict()
+        self._mapping: dict[str, LazyQCWPluginModuleWrapper] = dict()
 
         if not hasattr(self._namespace_package, "__path__"):
             raise NotAPackage(self._namespace_package)
@@ -153,7 +155,7 @@ class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
             )
 
     def __setitem__(
-        self, module_name: str, value: ty.Optional[LazyQCWPluginModuleWrapper]
+        self, module_name: str, value: LazyQCWPluginModuleWrapper | None
     ) -> None:
         """Set the entry associated to the given key.
 
@@ -185,7 +187,7 @@ class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
         """Get the number of modules loaded."""
         return len(self._mapping)
 
-    def __iter__(self) -> ty.Iterator[str]:
+    def __iter__(self) -> Iterator[str]:
         """Iterate over the loaded module names."""
         return iter(self._mapping)
 
@@ -193,15 +195,9 @@ class LazyModuleLoader(ty.MutableMapping[str, LazyQCWPluginModuleWrapper]):
         """Return a representation of the LazyModuleLoader."""
         return f"{type(self).__name__}({self._mapping})"
 
-    def items(self) -> ty.Iterator[ty.Tuple[str, LazyQCWPluginModuleWrapper]]:
-        """Iterate over all the registered modules, importing them if needed.
+    def items(self) -> ItemsView[str, LazyQCWPluginModuleWrapper]:
+        """Iterate over all the registered modules, importing them if needed."""
+        return self._mapping.items()
 
-        :return: an iterator over tuples (key, module).
-        """
-        for key in self.keys():
-            yield (key, self.__getitem__(key))
-
-
-import qcw.plugins.frameworks as qcw_frameworks_namespace_package
 
 frameworks = LazyModuleLoader(namespace_package=qcw_frameworks_namespace_package)

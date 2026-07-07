@@ -20,15 +20,13 @@
 # program. If not, see https://www.gnu.org/licenses/lgpl-3.0.txt
 #
 # =============================================================================
-
+from __future__ import annotations
 
 import abc
-import typing as ty
+from dataclasses import dataclass
+from typing import Any, Iterable, Iterator
 
 from qcw.exceptions import UnsupportedEqualityTesting
-
-
-from dataclasses import dataclass
 
 
 @dataclass
@@ -136,7 +134,7 @@ class Clbit(Bit):
         return super().__str__()
 
 
-class RoutineWrapper(abc.ABC):
+class RoutineWrapper(abc.ABC, Iterable["RoutineWrapper"]):
     """Wrapper around the framework-specific routine type.
 
     This class should be subclassed and implemented for each framework. It
@@ -148,7 +146,7 @@ class RoutineWrapper(abc.ABC):
     _hardware_bit_suffix: str = "hardware"
 
     @abc.abstractmethod
-    def __init__(self, routine: ty.Any, parent: ty.Optional[ty.Any]):
+    def __init__(self, routine: Any, parent: Any | None):
         """Initialise the wrapper with the given routine.
 
         :param routine: a framework-specific routine that will be wrapped.
@@ -157,17 +155,17 @@ class RoutineWrapper(abc.ABC):
         self._parent = parent
 
     @property
-    def routine(self) -> ty.Any:
+    def routine(self) -> Any:
         """Return the framework-specific routine given at initialisation."""
         return self._routine
 
     @property
-    def parent(self) -> ty.Optional[ty.Any]:
+    def parent(self) -> Any | None:
         """Return the framework-specific parent given at initialisation."""
         return self._parent
 
     @abc.abstractmethod
-    def __iter__(self) -> ty.Iterable["RoutineWrapper"]:
+    def __iter__(self) -> Iterator[RoutineWrapper]:
         """Magic Python method to make the RoutineWrapper object iterable.
 
         :return: an iterable over all the subroutines called by the wrapped
@@ -176,9 +174,9 @@ class RoutineWrapper(abc.ABC):
         pass
 
     @property
-    def ops(self):
+    def ops(self) -> tuple[RoutineWrapper, ...]:
         """Return a list of the subroutines called by self."""
-        return list(self)
+        return tuple(self)
 
     @property
     @abc.abstractmethod
@@ -258,18 +256,18 @@ class RoutineWrapper(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def qubits(self) -> ty.Iterable[Qubit]:
+    def qubits(self) -> Iterable[Qubit]:
         """Return the qubits self is applied on."""
         pass
 
     @property
     @abc.abstractmethod
-    def clbits(self) -> ty.Iterable[Clbit]:
+    def clbits(self) -> Iterable[Clbit]:
         """Return the classical bits self is applied on."""
         pass
 
     @property
-    def bits(self) -> ty.Iterable[Bit]:
+    def bits(self) -> Iterable[Bit]:
         """Return the bits self is applied on."""
         yield from self.qubits
         yield from self.clbits

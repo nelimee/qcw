@@ -1,6 +1,6 @@
 #!/bin/sh
 
 rm dist/*
-python setup.py sdist bdist_wheel
+uv build --all-packages
 python -m twine upload --repository pypi dist/*
 

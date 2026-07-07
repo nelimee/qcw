@@ -21,7 +21,6 @@
 #
 # =============================================================================
 
-import typing as ty
 import types
 
 
@@ -52,7 +51,7 @@ class UnsupportedEqualityTesting(QCWException):
     thrown.
     """
 
-    def __init__(self, self_type: ty.Type, other_type: ty.Type):
+    def __init__(self, self_type: type, other_type: type):
         """Insert the provided types into an explanatory message."""
         super(UnsupportedEqualityTesting, self).__init__(
             f"Cannot compare an instance of'{self_type.__name__}' with "
@@ -79,7 +78,7 @@ class NotAPackage(QCWException):
 class NoCompatiblePluginFound(QCWException):
     """Thrown when no plugin supports the given routine instance."""
 
-    def __init__(self, routine_type: ty.Type, reasons: ty.Dict[str, str]):
+    def __init__(self, routine_type: type, reasons: dict[str, str | None]):
         """Build a useful message to understand why no framework was used."""
         longest_framwork_name: int = max(map(len, reasons))
         super(NoCompatiblePluginFound, self).__init__(

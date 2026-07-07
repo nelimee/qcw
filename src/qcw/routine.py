@@ -1,6 +1,6 @@
 """Implements an helper function to create RoutineWrapper instances.
 
-This module provides the Routine function that will automatically try to 
+This module provides the Routine function that will automatically try to
 find the correct plugin to wrap the given routine instance.
 
 Warning: the Routine function does not follow the usual naming convention.
@@ -27,14 +27,14 @@ Warning: the Routine function does not follow the usual naming convention.
 #
 # =============================================================================
 
-import typing as ty
+from typing import Any
 
+from qcw.exceptions import NoCompatiblePluginFound
 from qcw.frameworks import frameworks
 from qcw.plugins.frameworks.interfaces import RoutineWrapper as BaseRoutineWrapper
-from qcw.exceptions import NoCompatiblePluginFound
 
 
-def Routine(routine, **framework_kwargs) -> BaseRoutineWrapper:
+def Routine(routine: Any, **framework_kwargs) -> BaseRoutineWrapper:
     """Wrap a framework-specific routine object into a RoutineWrapper instance.
 
     :param routine: a framework-specific routine that is supported by one of
@@ -46,7 +46,7 @@ def Routine(routine, **framework_kwargs) -> BaseRoutineWrapper:
     :raise NotImplementedError: if no installed plugin can handle the given
         routine.
     """
-    reasons: ty.Dict[str, str] = dict()
+    reasons: dict[str, str | None] = dict()
 
     for name, framework in frameworks.items():
         supports_framework, reason = framework.supports_routine(routine)
@@ -54,5 +54,4 @@ def Routine(routine, **framework_kwargs) -> BaseRoutineWrapper:
         if supports_framework:
             return framework.RoutineWrapper(routine, **framework_kwargs)
 
-    longest_framwork_name: int = max(map(len, reasons))
     raise NoCompatiblePluginFound(type(routine), reasons)
