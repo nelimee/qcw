@@ -1,6 +1,6 @@
 [project]
 name = "qcw"
-version = "0.1.0"
+version = "0.2.0"
 description = "Universal and consistant interface to access information from quantum circuits implemented using different framework"
 readme = "README.md"
 authors = [
