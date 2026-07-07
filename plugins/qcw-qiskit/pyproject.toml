@@ -1,0 +1,15 @@
+[project]
+name            = "qcw-qiskit"
+version         = "0.1.0"
+description     = "Plugin bringing Qiskit support to the qcw library"
+readme          = "README.md"
+authors         = [{ name = "Adrien Suau", email = "12374487+nelimee@users.noreply.github.com" }]
+requires-python = ">=3.6,<3.12"
+dependencies    = ["qcw", "qiskit"]
+
+[build-system]
+requires      = ["uv_build>=0.11.26,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "qcw.plugins.frameworks.qiskit"
