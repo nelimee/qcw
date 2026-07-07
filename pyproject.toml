@@ -1,11 +1,13 @@
 [project]
-name            = "qcw"
-version         = "0.1.0"
-description     = "Universal and consistant interface to access information from quantum circuits implemented using different framework"
-readme          = "README.md"
-authors         = [{ name = "Adrien Suau", email = "12374487+nelimee@users.noreply.github.com" }]
+name = "qcw"
+version = "0.1.0"
+description = "Universal and consistant interface to access information from quantum circuits implemented using different framework"
+readme = "README.md"
+authors = [
+    { name = "Adrien Suau", email = "12374487+nelimee@users.noreply.github.com" },
+]
 requires-python = ">=3.10,<3.12"
-dependencies    = []
+dependencies = []
 
 [project.optional-dependencies]
 qiskit    = ["qcw-qiskit"]
@@ -29,6 +31,3 @@ members = ["plugins/*"]
 [dependency-groups]
 lint = ["ruff==0.15.20", "ty==0.0.56"]
 dev  = ["ipython", "qcw[all]", { include-group = "lint" }]
-
-[tool.uv.build-backend]
-module-name = "qcw.plugins.frameworks"
